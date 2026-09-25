@@ -6,28 +6,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Unzip
-        run: |
-          rm -rf app
-          unzip -o "Woi 1.0.zip" -d app
-          ls -R app | head -n 100
+          
       - name: Find Android project
         run: |
-          ANDROID_DIR=$(find app -type f -name "gradlew" | head -n 1 | xargs dirname)
+          GRADLEW=$(find . -type f -name "gradlew" | head -n 1)
+          echo "Found gradlew at: $GRADLEW"
+          ANDROID_DIR=$(dirname "$GRADLEW")
           echo "ANDROID_DIR=$ANDROID_DIR" >> $GITHUB_ENV
-          echo "Found $ANDROID_DIR"
-          mkdir -p $ANDROID_DIR/app
-          keytool -genkey -v -keystore $ANDROID_DIR/app/release.keystore -alias londonlingo -keyalg RSA -keysize 2048 -validity 10000 -storepass london123 -keypass london123 -dname "CN=London Lingo, OU=London, O=London, L=London, ST=London, C=GB"
+          
+      - name: Make gradlew executable
+        run: chmod +x $ANDROID_DIR/gradlew
+        
       - name: Build AAB
         run: |
           cd $ANDROID_DIR
-          chmod +x gradlew
-          ./gradlew bundleRelease -Pandroid.injected.signing.store.file=app/release.keystore -Pandroid.injected.signing.store.password=london123 -Pandroid.injected.signing.key.alias=londonlingo -Pandroid.injected.signing.key.password=london123
+          ./gradlew bundleRelease
+          
       - uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: "**/*.aab"
+          path: |
+            **/build/outputs/bundle/release/*.aab
+            **/outputs/bundle/release/*.aab
