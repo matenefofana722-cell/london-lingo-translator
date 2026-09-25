@@ -1,24 +1,29 @@
 workflows:
   android-aab:
-    name: Build AAB
+    name: Android AAB
     max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
-      groups:
-        - google_play
-      vars:
-        XCODE_WORKSPACE: ""
-      node: 20.11.1
+      node: 20
       java: 17
     scripts:
-      - name: Install dependencies
+      - name: Unzip project
         script: |
-          npm install || yarn install
-      - name: Build Android AAB
+          unzip -o "Woi 1.0.zip" -d .
+          ls -la
+          ls -la android || ls -la Woi* -R | head -50
+      - name: Install deps
         script: |
-          cd android
+          cd $(find . -name "package.json" -type f | head -1 | xargs dirname) || true
+          npm install || yarn install || true
+      - name: Build AAB
+        script: |
+          ANDROID_DIR=$(find . -name "gradlew" -type f | head -1 | xargs dirname)
+          echo "Found gradlew in $ANDROID_DIR"
+          cd $ANDROID_DIR
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           chmod +x gradlew
           ./gradlew bundleRelease
     artifacts:
-      - android/app/build/outputs/bundle/release/*.aab
-      - android/app/build/outputs/**/*.aab
+      - "**/app/build/outputs/bundle/release/*.aab"
+      - "**/build/outputs/bundle/release/*.aab"
