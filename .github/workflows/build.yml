@@ -1,50 +1,33 @@
 name: Build AAB Fixed Key
-
 on:
   workflow_dispatch
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
+      - name: Unzip
         run: |
-          if [ -f package.json ]; then
-            npm install
-          fi
-          if [ -f "Woi 1.0.zip" ]; then
-            unzip -o "Woi 1.0.zip" -d . || true
-          fi
-
-      - name: Create fixed keystore
+          rm -rf app
+          unzip -o "Woi 1.0.zip" -d app
+          ls -R app | head -n 100
+      - name: Find Android project
         run: |
-          mkdir -p android/app
-          keytool -genkey -v -keystore android/app/release.keystore -alias londonlingo -keyalg RSA -keysize 2048 -validity 10000 -storepass london123 -keypass london123 -dname "CN=London Lingo, OU=London, O=London, L=London, ST=London, C=GB"
-
-      - name: Setup Gradle
+          ANDROID_DIR=$(find app -type f -name "gradlew" | head -n 1 | xargs dirname)
+          echo "ANDROID_DIR=$ANDROID_DIR" >> $GITHUB_ENV
+          echo "Found $ANDROID_DIR"
+          mkdir -p $ANDROID_DIR/app
+          keytool -genkey -v -keystore $ANDROID_DIR/app/release.keystore -alias londonlingo -keyalg RSA -keysize 2048 -validity 10000 -storepass london123 -keypass london123 -dname "CN=London Lingo, OU=London, O=London, L=London, ST=London, C=GB"
+      - name: Build AAB
         run: |
-          cd android || cd */android || true
+          cd $ANDROID_DIR
           chmod +x gradlew
           ./gradlew bundleRelease -Pandroid.injected.signing.store.file=app/release.keystore -Pandroid.injected.signing.store.password=london123 -Pandroid.injected.signing.key.alias=londonlingo -Pandroid.injected.signing.key.password=london123
-
-      - name: Find and upload AAB
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: |
-            **/app-release.aab
-            **/*.aab
+          path: "**/*.aab"
