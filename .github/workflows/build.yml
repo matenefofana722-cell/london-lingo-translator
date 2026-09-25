@@ -6,24 +6,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          
       - name: Build AAB
         run: |
           GRADLEW=$(find . -type f -name "gradlew" | head -n 1)
           echo "Found: $GRADLEW"
           DIR=$(dirname "$GRADLEW")
-          echo "Dir: $DIR"
           chmod +x "$GRADLEW"
           cd "$DIR"
           ./gradlew bundleRelease
-          
       - uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: |
-            **/build/outputs/bundle/release/*.aab
+          path: "**/build/outputs/bundle/release/*.aab"
