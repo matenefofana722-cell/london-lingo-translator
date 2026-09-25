@@ -1,9 +1,38 @@
-unzip -o "Woi 1.0.zip" -d app
-ANDROID=$(find app -type d -name android | head -n1)
-keytool -genkey -v -keystore $ANDROID/app/my-release-key.jks -alias key -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity 10000 -storepass London123 -keypass London123 -dname "CN=London, OU=App, O=App, L=London, S=London, C=GB"
-echo "MYAPP_UPLOAD_STORE_FILE=my-release-key.jks
-MYAPP_UPLOAD_KEY_ALIAS=key
-MYAPP_UPLOAD_STORE_PASSWORD=London123
-MYAPP_UPLOAD_KEY_PASSWORD=London123" >> $ANDROID/gradle.properties
-cd $(dirname $ANDROID) && npm install
-cd android && chmod +x gradlew && ./gradlew bundleRelease
+name: Build AAB Fixed Key
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: |
+          unzip -o "Woi 1.0.zip" -d .
+          rm -f "Woi 1.0.zip"
+          ls -la
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Create 4096-bit Keystore
+        run: |
+          keytool -genkeypair -v -storetype JKS -keystore android/app/upload-keystore.jks -storepass london123 -keypass london123 -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=London Lingo, OU=Mobile, O=LondonLingo, L=London, S=London, C=GB"
+          echo "MYAPP_UPLOAD_STORE_FILE=upload-keystore.jks" >> android/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_ALIAS=my-key-alias" >> android/gradle.properties
+          echo "MYAPP_UPLOAD_STORE_PASSWORD=london123" >> android/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_PASSWORD=london123" >> android/gradle.properties
+      - name: Build AAB
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
