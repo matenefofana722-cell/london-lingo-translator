@@ -12,19 +12,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           
-      - name: Find Android project
-        run: |
-          GRADLEW=$(find . -type f -name "gradlew" | head -n 1)
-          echo "Found gradlew at: $GRADLEW"
-          ANDROID_DIR=$(dirname "$GRADLEW")
-          echo "ANDROID_DIR=$ANDROID_DIR" >> $GITHUB_ENV
-          
-      - name: Make gradlew executable
-        run: chmod +x $ANDROID_DIR/gradlew
-        
       - name: Build AAB
         run: |
-          cd $ANDROID_DIR
+          GRADLEW=$(find . -type f -name "gradlew" | head -n 1)
+          echo "Found: $GRADLEW"
+          DIR=$(dirname "$GRADLEW")
+          echo "Dir: $DIR"
+          chmod +x "$GRADLEW"
+          cd "$DIR"
           ./gradlew bundleRelease
           
       - uses: actions/upload-artifact@v4
@@ -32,4 +27,3 @@ jobs:
           name: app-release-aab
           path: |
             **/build/outputs/bundle/release/*.aab
-            **/outputs/bundle/release/*.aab
