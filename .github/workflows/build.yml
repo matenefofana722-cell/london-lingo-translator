@@ -1,1 +1,44 @@
-
+name: Build Strong AAB
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Unzip
+        run: |
+          unzip -o "Woi 1.0.zip" -d temp
+          cp -r temp/../ -n 2>/dev/null || true
+          mv temp/*. 2>/dev/null || true
+          ls -la
+      - name: Build 2048-bit AAB
+        run: |
+          ANDROID=$(find. -type d -name android | head -n1)
+          echo "Found $ANDROID"
+          KEYSTORE="$ANDROID/app/my-release-key.jks"
+          rm -f "$KEYSTORE"
+          keytool -genkey -v -keystore "$KEYSTORE" -alias key -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity 10000 -storepass London123 -keypass London123 -dname "CN=London, OU=App, O=App, L=London, S=London, C=GB"
+          echo "MYAPP_UPLOAD_STORE_FILE=my-release-key.jks" >> $ANDROID/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_ALIAS=key" >> $ANDROID/gradle.properties
+          echo "MYAPP_UPLOAD_STORE_PASSWORD=London123" >> $ANDROID/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_PASSWORD=London123" >> $ANDROID/gradle.properties
+          ROOT=$(dirname $ANDROID)
+          cd $ROOT
+          npm install
+          cd android
+          chmod +x gradlew
+         ./gradlew bundleRelease
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: STRONG-AAB
+          path: '**/outputs/bundle/release/*.aab'
