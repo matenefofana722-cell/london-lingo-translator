@@ -16,26 +16,23 @@ jobs:
           node-version: '20'
       - name: Unzip
         run: unzip -o "Woi 1.0.zip" -d project
-      - name: List files
-        run: ls -la project
-      - name: Build 2048 key
+      - name: Build
         run: |
-          ANDROID=$(find project -type d -name android | head -n1)
+          ANDROID=$(find project -type d -name android | head -n 1)
           echo $ANDROID
-          KEY="$ANDROID/app/my-release-key.jks"
-          rm -f $KEY
-          keytool -genkey -v -keystore $KEY -alias key -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity 10000 -storepass London123 -keypass London123 -dname "CN=London, OU=App, O=App, L=London, S=London, C=GB"
-          echo MYAPP_UPLOAD_STORE_FILE=my-release-key.jks >> $ANDROID/gradle.properties
-          echo MYAPP_UPLOAD_KEY_ALIAS=key >> $ANDROID/gradle.properties
-          echo MYAPP_UPLOAD_STORE_PASSWORD=London123 >> $ANDROID/gradle.properties
-          echo MYAPP_UPLOAD_KEY_PASSWORD=London123 >> $ANDROID/gradle.properties
+          rm -f $ANDROID/app/my-release-key.jks
+          keytool -genkey -v -keystore $ANDROID/app/my-release-key.jks -alias key -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity 10000 -storepass London123 -keypass London123 -dname "CN=London, OU=App, O=App, L=London, S=London, C=GB"
+          echo "MYAPP_UPLOAD_STORE_FILE=my-release-key.jks" >> $ANDROID/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_ALIAS=key" >> $ANDROID/gradle.properties
+          echo "MYAPP_UPLOAD_STORE_PASSWORD=London123" >> $ANDROID/gradle.properties
+          echo "MYAPP_UPLOAD_KEY_PASSWORD=London123" >> $ANDROID/gradle.properties
           cd $(dirname $ANDROID)
           npm install
           cd android
           chmod +x gradlew
          ./gradlew bundleRelease
-      - name: Upload AAB
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: STRONG-AAB
-          path: '**/outputs/bundle/release/*.aab'
+          path: project/**/outputs/bundle/release/*.aab
