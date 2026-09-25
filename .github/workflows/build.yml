@@ -10,16 +10,20 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Unzip and Build
+      - name: Build
         run: |
-          unzip -o "Woi 1.0.zip" -d .
-          GRADLEW=$(find . -name "gradlew" -type f | head -1)
-          echo "Found $GRADLEW"
-          DIR=$(dirname "$GRADLEW")
-          cd "$DIR"
+          echo "Unzipping..."
+          unzip -o "Woi 1.0.zip" -d extracted
+          cd extracted
+          # find where the real project is
+          ls -la
+          GRADLEW=$(find . -name "gradlew" -type f | head -n 1)
+          echo "Found: $GRADLEW"
+          cd $(dirname "$GRADLEW")
           chmod +x gradlew
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: app-release-aab
+          name: app-aab
           path: "**/build/outputs/bundle/release/*.aab"
+          if-no-files-found: error
