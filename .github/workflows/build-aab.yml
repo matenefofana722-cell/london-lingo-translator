@@ -6,24 +6,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Unzip and Build
+      - name: Get your AAB
         run: |
           unzip -o "Woi 1.0.zip" -d ./src
-          ROOT=$(find ./src -name "gradlew" -type f | head -1 | xargs dirname | xargs dirname)
-          echo "ROOT=$ROOT" >> $GITHUB_ENV
-          cd $ROOT
-          npm install || yarn install || true
-          cd android
-          chmod +x gradlew
-          ./gradlew bundleRelease
+          ls -la ./src/android/
+          echo "AAB found at:"
+          find ./src -name "*.aab" -type f
       - uses: actions/upload-artifact@v4
         with:
-          name: app-aab
-          path: "**/build/outputs/bundle/release/*.aab"
+          name: your-aab-ready-for-playstore
+          path: ./src/android/app-release.aab
